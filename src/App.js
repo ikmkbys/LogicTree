@@ -342,7 +342,7 @@ export default function App() {
             <p className="text-slate-500 mt-2">課題を分解し、AIと一緒に根本原因や解決策を考えましょう。</p>
         </header>
         <main className="flex justify-start p-4">
-          <div className="p-4 overflow-x-auto">
+          <div className="p-4">
             {treeData && <TreeNode 
               node={treeData} 
               onAddChild={handleAddChild} 
