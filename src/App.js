@@ -68,26 +68,29 @@ const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingN
   };
 
   return (
-    <div className="flex items-start">
+    <div className="flex items-start relative">
+      {/* 接続線を実線に変更 */}
       {!isRoot && (
-        <div className="relative h-full">
-            <div className="absolute top-1/2 -translate-y-1/2 left-[-2.5rem] h-px w-10 bg-gray-400"></div>
-            <div className="absolute bottom-1/2 left-[-2.5rem] w-px h-full bg-gray-400"></div>
+        <div className="absolute top-0 left-[-3.5rem] h-full">
+            {/* Horizontal solid line */}
+            <div className="absolute top-1/2 -translate-y-px w-14 h-px bg-slate-300"></div>
+            {/* Vertical solid line */}
+            <div className="absolute top-0 w-px h-full bg-slate-300"></div>
         </div>
       )}
 
       <div 
-        className={`flex flex-col items-start transition-all duration-200 ${isDragOver ? 'bg-blue-100/50 rounded-lg' : ''}`}
+        className={`flex flex-col items-start transition-all duration-300 ${isDragOver ? 'bg-blue-100/50 rounded-xl p-2' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         <div 
-            className="relative group bg-white border-2 border-gray-300 rounded-lg shadow-md p-3 min-w-[220px] transition-all duration-200 hover:shadow-lg hover:border-blue-500"
+            className="relative group bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-xl shadow-lg p-4 min-w-[240px] transition-all duration-300 hover:shadow-xl hover:border-blue-300"
             onDoubleClick={handleDoubleClickEdit}
         >
           {isLoading && (
-            <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded-lg">
+            <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10 rounded-xl backdrop-blur-sm">
               <LoaderCircle className="animate-spin text-blue-500" />
             </div>
           )}
@@ -100,9 +103,9 @@ const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingN
                   onChange={(e) => setEditText(e.target.value)}
                   onBlur={handleSave}
                   onKeyDown={handleKeyDown}
-                  className="w-full text-gray-800 bg-transparent border-b-2 border-blue-500 focus:outline-none"
+                  className="w-full text-slate-800 bg-transparent border-b-2 border-blue-500 focus:outline-none"
                 />
-                <button onClick={handleSave} className="ml-2 p-1 text-gray-500 hover:text-green-600"><Save size={18} /></button>
+                <button onClick={handleSave} className="ml-2 p-1 text-slate-500 hover:text-green-600 transition-colors"><Save size={18} /></button>
               </div>
             ) : (
             <div 
@@ -110,23 +113,25 @@ const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingN
                 onDragStart={handleDragStart}
                 className={`flex items-center ${isLoading ? 'cursor-not-allowed' : ''}`}
             >
-                {!isRoot && <Move size={16} className={`mr-2 text-gray-400 ${isLoading ? '' : 'cursor-move'}`} />}
-                <p className="text-gray-800 break-words flex-grow cursor-pointer">{node.text}</p>
+                {!isRoot && <Move size={16} className={`mr-3 text-slate-400 flex-shrink-0 ${isLoading ? '' : 'cursor-move'}`} />}
+                <p className="text-slate-800 font-medium break-words flex-grow cursor-pointer">{node.text}</p>
             </div>
             )}
-          <div className="absolute top-1/2 -right-4 -translate-y-1/2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button onClick={() => onExpandIdeas(node.id)} className="bg-purple-500 text-white p-1.5 rounded-full shadow-md hover:bg-purple-600 transition-colors" title="✨ AIでアイデアを広げる">
-              <Sparkles size={14} />
+          {/* ボタンのデザインを変更 */}
+          <div className="absolute top-1/2 -right-5 -translate-y-1/2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-100 scale-90">
+            <button onClick={() => onExpandIdeas(node.id)} className="bg-purple-500 text-white p-2 rounded-full shadow-lg hover:bg-purple-600 transition-all hover:scale-110" title="✨ AIでアイデアを広げる">
+              <Sparkles size={16} />
             </button>
-            <button onClick={() => onAddChild(node.id)} className="bg-blue-500 text-white p-1.5 rounded-full shadow-md hover:bg-blue-600 transition-colors" title="子要素を追加">
-              <Plus size={14} />
+            <button onClick={() => onAddChild(node.id)} className="bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition-all hover:scale-110" title="子要素を追加">
+              <Plus size={16} />
             </button>
-            {!isRoot && <button onClick={() => onDeleteNode(node.id)} className="bg-red-500 text-white p-1.5 rounded-full shadow-md hover:bg-red-600 transition-colors" title="削除"><Trash2 size={14} /></button>}
+            {!isRoot && <button onClick={() => onDeleteNode(node.id)} className="bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-all hover:scale-110" title="削除"><Trash2 size={16} /></button>}
           </div>
         </div>
         
+        {/* 子ノードとの間隔を調整 */}
         {node.children && node.children.length > 0 && (
-          <div className="pt-8 pl-16 flex flex-col gap-8">
+          <div className="pt-10 pl-24 flex flex-col gap-10">
             {node.children.map(child => (
               <TreeNode 
                 key={child.id} 
@@ -265,7 +270,7 @@ export default function App() {
     };
 
     try {
-      const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+      const apiKey = "";
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -304,7 +309,6 @@ export default function App() {
     } catch (err) {
       console.error(err);
       setError("アイデアの生成中にエラーが発生しました。");
-      // Display error to user for 5 seconds
       setTimeout(() => setError(null), 5000);
     } finally {
       setLoadingNodeId(null);
@@ -323,22 +327,21 @@ export default function App() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans p-4 sm:p-8">
+    <div className="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen font-sans p-4 sm:p-8">
        {error && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50">
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50 animate-pulse">
           <strong className="font-bold">エラー: </strong>
           <span className="block sm:inline">{error}</span>
         </div>
       )}
       <div className="max-w-7xl mx-auto">
-        <header className="mb-8 text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 flex items-center justify-center gap-2">
-              <Sparkles className="text-purple-500"/>
-              AIロジックツリー
+        <header className="mb-12 text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent pb-2">
+              AI Logic Tree
             </h1>
-            <p className="text-gray-500 mt-2">課題を分解し、AIと一緒に根本原因や解決策を考えましょう。</p>
+            <p className="text-slate-500 mt-2">課題を分解し、AIと一緒に根本原因や解決策を考えましょう。</p>
         </header>
-        <main className="flex justify-center p-4">
+        <main className="flex justify-start p-4">
           <div className="p-4 overflow-x-auto">
             {treeData && <TreeNode 
               node={treeData} 
