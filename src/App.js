@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Plus, Trash2, Save, Move, Sparkles, LoaderCircle } from 'lucide-react';
+import { Plus, Trash2, Save, Move, Sparkles, LoaderCircle, RefreshCw, Download } from 'lucide-react';
 
 // TreeNodeコンポーネント：ツリーの各ノードを描画
 const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingNodeId, setEditingNodeId, onDropNode, onExpandIdeas, loadingNodeId }) => {
@@ -69,12 +69,9 @@ const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingN
 
   return (
     <div className="flex items-start relative">
-      {/* 接続線を実線に変更 */}
       {!isRoot && (
         <div className="absolute top-0 left-[-3.5rem] h-full">
-            {/* Horizontal solid line */}
             <div className="absolute top-1/2 -translate-y-px w-14 h-px bg-slate-300"></div>
-            {/* Vertical solid line */}
             <div className="absolute top-0 w-px h-full bg-slate-300"></div>
         </div>
       )}
@@ -117,7 +114,6 @@ const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingN
                 <p className="text-slate-800 font-medium break-words flex-grow cursor-pointer">{node.text}</p>
             </div>
             )}
-          {/* ボタンのデザインを変更 */}
           <div className="absolute top-1/2 -right-5 -translate-y-1/2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-100 scale-90">
             <button onClick={() => onExpandIdeas(node.id)} className="bg-purple-500 text-white p-2 rounded-full shadow-lg hover:bg-purple-600 transition-all hover:scale-110" title="✨ AIでアイデアを広げる">
               <Sparkles size={16} />
@@ -129,7 +125,6 @@ const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingN
           </div>
         </div>
         
-        {/* 子ノードとの間隔を調整 */}
         {node.children && node.children.length > 0 && (
           <div className="pt-10 pl-24 flex flex-col gap-10">
             {node.children.map(child => (
@@ -154,16 +149,66 @@ const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingN
   );
 };
 
+const initialTree = {
+  id: 'root',
+  text: '会社の売上を向上させる',
+  children: [],
+};
+
 // メインのAppコンポーネント
 export default function App() {
-  const [treeData, setTreeData] = useState({
-    id: 'root',
-    text: '会社の売上を向上させる',
-    children: [],
-  });
+  const [treeData, setTreeData] = useState(JSON.parse(JSON.stringify(initialTree)));
   const [editingNodeId, setEditingNodeId] = useState(null);
   const [loadingNodeId, setLoadingNodeId] = useState(null);
   const [error, setError] = useState(null);
+
+  const handleReset = () => {
+    // ユーザーに確認を求めずにリセットする
+    setTreeData(JSON.parse(JSON.stringify(initialTree)));
+  };
+
+  const handleExportCSV = () => {
+    const rows = [];
+    let maxDepth = 0;
+
+    const traverse = (node, depth = 0) => {
+        if (depth > maxDepth) {
+            maxDepth = depth;
+        }
+        const row = new Array(depth).fill('');
+        row.push(node.text);
+        rows.push(row);
+
+        if (node.children) {
+            node.children.forEach(child => traverse(child, depth + 1));
+        }
+    };
+
+    traverse(treeData);
+
+    const header = Array.from({ length: maxDepth + 1 }, (_, i) => `レベル ${i + 1}`).join(',');
+    
+    const csvString = rows.map(row => {
+        const fullRow = [...row];
+        while (fullRow.length <= maxDepth) {
+            fullRow.push('');
+        }
+        return fullRow.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',');
+    }).join('\n');
+
+    const csvContent = `${header}\n${csvString}`;
+    
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "ロジックツリー.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleAddChild = useCallback((parentId) => {
     const newId = `node-${Date.now()}`;
@@ -222,9 +267,9 @@ export default function App() {
           if (draggedNode && !isDescendant(draggedNode, idToFind)) {
               if (!node.children) node.children = [];
               node.children.push(draggedNode);
-              return true; // 成功
+              return true;
           }
-          return false; // 失敗
+          return false;
         }
         return node.children?.some(child => findAndAdd(child, idToFind)) ?? false;
       }
@@ -241,13 +286,8 @@ export default function App() {
     
     let nodeText = '';
     const findNodeText = (node, id) => {
-      if (node.id === id) {
-        nodeText = node.text;
-        return;
-      }
-      if (node.children) {
-        node.children.forEach(child => findNodeText(child, id));
-      }
+      if (node.id === id) nodeText = node.text;
+      if (node.children) node.children.forEach(child => findNodeText(child, id));
     };
     findNodeText(treeData, nodeId);
 
@@ -262,10 +302,7 @@ export default function App() {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: {
-          type: "ARRAY",
-          items: { type: "STRING" }
-        }
+        responseSchema: { type: "ARRAY", items: { type: "STRING" } }
       }
     };
 
@@ -277,29 +314,16 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
-      if (!response.ok) {
-          throw new Error(`APIエラー: ${response.status} ${response.statusText}`);
-      }
-
+      if (!response.ok) throw new Error(`APIエラー: ${response.status} ${response.statusText}`);
       const result = await response.json();
       
-      if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0].text) {
+      if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
         const ideas = JSON.parse(result.candidates[0].content.parts[0].text);
-        
         if (Array.isArray(ideas)) {
-          const newNodes = ideas.map(idea => ({
-            id: `node-${Date.now()}-${Math.random()}`,
-            text: idea,
-            children: []
-          }));
-
+          const newNodes = ideas.map(idea => ({ id: `node-${Date.now()}-${Math.random()}`, text: idea, children: [] }));
           setTreeData(prevTree => {
             let newTree = JSON.parse(JSON.stringify(prevTree));
-            const addAction = (node) => {
-              node.children.push(...newNodes);
-              return node;
-            };
+            const addAction = (node) => { node.children.push(...newNodes); return node; };
             return traverseTree(newTree, nodeId, addAction);
           });
         }
@@ -320,9 +344,7 @@ export default function App() {
       action(node);
       return node;
     }
-    if (node.children) {
-      node.children = node.children.map(child => traverseTree(child, nodeId, action));
-    }
+    if (node.children) node.children = node.children.map(child => traverseTree(child, nodeId, action));
     return node;
   };
 
@@ -335,11 +357,23 @@ export default function App() {
         </div>
       )}
       <div className="max-w-7xl mx-auto">
-        <header className="mb-12 text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent pb-2">
-              AI Logic Tree
-            </h1>
-            <p className="text-slate-500 mt-2">課題を分解し、AIと一緒に根本原因や解決策を考えましょう。</p>
+        <header className="mb-12">
+            <div className="text-center">
+                <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent pb-2">
+                  AI Logic Tree
+                </h1>
+                <p className="text-slate-500 mt-2">課題を分解し、AIと一緒に根本原因や解決策を考えましょう。</p>
+            </div>
+            <div className="flex justify-center gap-4 mt-6">
+                <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                    <RefreshCw size={16} />
+                    リセット
+                </button>
+                <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-blue-500 border border-blue-500 rounded-lg shadow-sm text-white hover:bg-blue-600 transition-colors">
+                    <Download size={16} />
+                    CSVエクスポート
+                </button>
+            </div>
         </header>
         <main className="flex justify-start p-4">
           <div className="p-4">
