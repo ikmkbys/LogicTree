@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Plus, Trash2, Save, Move, Sparkles, LoaderCircle, RefreshCw, Download } from 'lucide-react';
+import { Plus, Trash2, Save, Move, Sparkles, LoaderCircle, RefreshCw, Download, Upload } from 'lucide-react';
 
 // TreeNodeコンポーネント：ツリーの各ノードを描画
 const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingNodeId, setEditingNodeId, onDropNode, onExpandIdeas, loadingNodeId }) => {
@@ -161,9 +161,9 @@ export default function App() {
   const [editingNodeId, setEditingNodeId] = useState(null);
   const [loadingNodeId, setLoadingNodeId] = useState(null);
   const [error, setError] = useState(null);
+  const importFileRef = useRef(null);
 
   const handleReset = () => {
-    // ユーザーに確認を求めずにリセットする
     setTreeData(JSON.parse(JSON.stringify(initialTree)));
   };
 
@@ -172,42 +172,104 @@ export default function App() {
     let maxDepth = 0;
 
     const traverse = (node, depth = 0) => {
-        if (depth > maxDepth) {
-            maxDepth = depth;
-        }
+        if (depth > maxDepth) maxDepth = depth;
         const row = new Array(depth).fill('');
         row.push(node.text);
         rows.push(row);
-
-        if (node.children) {
-            node.children.forEach(child => traverse(child, depth + 1));
-        }
+        if (node.children) node.children.forEach(child => traverse(child, depth + 1));
     };
-
     traverse(treeData);
 
     const header = Array.from({ length: maxDepth + 1 }, (_, i) => `レベル ${i + 1}`).join(',');
-    
     const csvString = rows.map(row => {
         const fullRow = [...row];
-        while (fullRow.length <= maxDepth) {
-            fullRow.push('');
-        }
+        while (fullRow.length <= maxDepth) fullRow.push('');
         return fullRow.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',');
     }).join('\n');
 
     const csvContent = `${header}\n${csvString}`;
     
-    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    // ファイル名生成ロジック
+    const date = new Date();
+    const yy = date.getFullYear().toString().slice(-2);
+    const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+    const dd = date.getDate().toString().padStart(2, '0');
+    const formattedDate = `${yy}${mm}${dd}`;
+    const filename = `${treeData.text}_${formattedDate}.csv`;
+
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // Excelでの文字化け防止
     const blob = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", "ロジックツリー.csv");
+    link.setAttribute("download", filename);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleImportClick = () => {
+    importFileRef.current.click();
+  };
+
+  const handleFileImport = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const text = e.target.result;
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) throw new Error("無効なCSVファイルです。");
+
+            const dataRows = lines.slice(1); // ヘッダーを除外
+            let newTree = null;
+            const parentStack = [];
+
+            dataRows.forEach((row, index) => {
+                // 正規表現でCSV行をパース
+                const cells = (row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || []).map(cell => cell.replace(/^"|"$/g, ''));
+                
+                const depth = cells.findIndex(cell => cell.trim() !== '');
+                if (depth === -1) return;
+
+                const text = cells[depth];
+                const newNode = {
+                    id: `imported-${Date.now()}-${index}`,
+                    text: text,
+                    children: []
+                };
+
+                if (depth === 0) {
+                    newTree = newNode;
+                    parentStack[0] = newNode;
+                } else {
+                    const parent = parentStack[depth - 1];
+                    if (!parent) throw new Error(`CSVの構造が不正です (行: ${index + 2})`);
+                    parent.children.push(newNode);
+                    parentStack[depth] = newNode;
+                }
+                parentStack.length = depth + 1;
+            });
+            
+            if (newTree) {
+                setTreeData(newTree);
+            } else {
+                throw new Error("CSVからツリーを構築できませんでした。");
+            }
+
+        } catch (err) {
+            console.error(err);
+            setError("CSVの読み込みに失敗しました。フォーマットを確認してください。");
+            setTimeout(() => setError(null), 5000);
+        } finally {
+           // 同じファイルを再度選択できるようにする
+           event.target.value = null;
+        }
+    };
+    reader.readAsText(file);
   };
 
   const handleAddChild = useCallback((parentId) => {
@@ -368,6 +430,11 @@ export default function App() {
                 <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm text-slate-700 hover:bg-slate-50 transition-colors">
                     <RefreshCw size={16} />
                     リセット
+                </button>
+                <input type="file" accept=".csv" ref={importFileRef} onChange={handleFileImport} style={{ display: 'none' }} />
+                <button onClick={handleImportClick} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                    <Upload size={16} />
+                    CSVインポート
                 </button>
                 <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-blue-500 border border-blue-500 rounded-lg shadow-sm text-white hover:bg-blue-600 transition-colors">
                     <Download size={16} />
