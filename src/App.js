@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Plus, Trash2, Save, Move, Sparkles, LoaderCircle, RefreshCw, Download, Upload } from 'lucide-react';
+import { Plus, Trash2, Save, Move, Sparkles, LoaderCircle, RefreshCw, Download, Upload, HelpCircle } from 'lucide-react';
 
 // TreeNodeコンポーネント：ツリーの各ノードを描画
 const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingNodeId, setEditingNodeId, onDropNode, onExpandIdeas, loadingNodeId }) => {
@@ -426,7 +426,7 @@ export default function App() {
                 </h1>
                 <p className="text-slate-500 mt-2">課題を分解し、AIと一緒に根本原因や解決策を考えましょう。</p>
             </div>
-            <div className="flex justify-center gap-4 mt-6">
+            <div className="flex justify-center gap-4 mt-6 flex-wrap">
                 <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm text-slate-700 hover:bg-slate-50 transition-colors">
                     <RefreshCw size={16} />
                     リセット
@@ -440,6 +440,10 @@ export default function App() {
                     <Download size={16} />
                     CSVエクスポート
                 </button>
+                <a href="help.html" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                    <HelpCircle size={16} />
+                    ヘルプ
+                </a>
             </div>
         </header>
         <main className="flex justify-start p-4">

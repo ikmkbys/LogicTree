@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIロジックツリー 使い方ガイド</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), padding 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+        .accordion-content.open {
+            max-height: 1000px; /* 十分な高さを確保 */
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+        }
+        .accordion-button svg {
+            transition: transform 0.3s ease-in-out;
+        }
+        .accordion-button.open svg {
+            transform: rotate(180deg);
+        }
+        .diagram-node {
+            position: relative;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            display: flex;
+            align-items: center;
+        }
+        .diagram-connector {
+            position: absolute;
+            width: 2rem;
+            height: 1px;
+            background-color: #cbd5e1;
+            top: 50%;
+            left: -2rem;
+        }
+    </style>
+    <!-- Chosen Palette: Calm Slate -->
+    <!-- Application Structure Plan: このSPAは、アコーディオン形式のレイアウトを採用しています。これにより、ユーザーはまず情報の全体像（「基本操作」「AI機能」「データ管理」）を把握し、興味のある項目をクリックして詳細を確認できます。各項目内では、テキスト説明と視覚的なダイアグラムを並べて表示することで、直感的な理解を促進します。この構造は、情報を段階的に開示することで学習者の負担を軽減し、能動的な探索を促すために選択しました。 -->
+    <!-- Visualization & Content Choices: 各機能説明は、テキストと並行して、HTMLとTailwind CSSでスタイリングされた「ダイアグラム」を用いて視覚化しています。例えば、「ノードの追加」では、既存ノードの横に「＋」アイコンが表示される様子をdiv要素で模倣しています。これにより、実際のアプリのUIを想起させ、操作方法の記憶定着を助けます。インタラクションはアコーディオンの開閉に限定し、シンプルさを保ちました。Chart.js等のライブラリは、このコンテンツには不要なため使用していません。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-stone-50 text-slate-700">
+
+    <div class="container mx-auto max-w-4xl px-4 py-12 sm:py-20">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-800">🌳 AIロジックツリー</h1>
+            <p class="mt-4 text-lg text-slate-500">使い方ガイド</p>
+        </header>
+
+        <main class="space-y-4">
+            
+            <!-- Accordion 1: 基本的なノード操作 -->
+            <div class="accordion-item bg-white/60 border border-stone-200 rounded-xl shadow-sm transition-shadow hover:shadow-md">
+                <button class="accordion-button w-full flex justify-between items-center p-6 text-left">
+                    <span class="text-xl font-semibold text-slate-800">基本的なノード操作</span>
+                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="accordion-content">
+                    <div class="space-y-8">
+                        <!-- テキスト編集 -->
+                        <div class="grid md:grid-cols-2 gap-6 items-center">
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-800 mb-2">テキスト編集 ✍️</h3>
+                                <p class="text-slate-600">ノードのテキスト部分を<strong class="text-blue-600">ダブルクリック</strong>すると、編集モードに切り替わります。</p>
+                            </div>
+                            <div class="flex justify-center items-center p-4 bg-stone-100 rounded-lg">
+                                <div class="diagram-node cursor-pointer" title="ダブルクリックで編集">
+                                    <p>売上を向上させる</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ノードの追加 -->
+                        <div class="grid md:grid-cols-2 gap-6 items-center">
+                             <div>
+                                <h3 class="font-bold text-lg text-slate-800 mb-2">ノードの追加 ➕</h3>
+                                <p class="text-slate-600">ノードにカーソルを合わせると表示される「＋」ボタンで、新しい子ノードを追加できます。</p>
+                            </div>
+                            <div class="flex justify-center items-center p-4 bg-stone-100 rounded-lg">
+                                <div class="relative">
+                                    <div class="diagram-node"><p>売上を向上させる</p></div>
+                                    <div class="absolute top-1/2 -right-6 -translate-y-1/2 bg-blue-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg">＋</div>
+                                </div>
+                            </div>
+                        </div>
+                         <!-- ノードの移動 -->
+                        <div class="grid md:grid-cols-2 gap-6 items-center">
+                             <div>
+                                <h3 class="font-bold text-lg text-slate-800 mb-2">ノードの移動 ↔️</h3>
+                                <p class="text-slate-600">ノード左側の「十字」アイコンをドラッグ＆ドロップして、ノードを移動できます。</p>
+                            </div>
+                             <div class="flex justify-center items-center p-4 bg-stone-100 rounded-lg">
+                                <div class="diagram-node">
+                                    <span class="mr-3 text-slate-400 cursor-move">↔</span>
+                                    <p>新規顧客の獲得</p>
+                                    <div class="diagram-connector"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ノードの削除 -->
+                        <div class="grid md:grid-cols-2 gap-6 items-center">
+                             <div>
+                                <h3 class="font-bold text-lg text-slate-800 mb-2">ノードの削除 🗑️</h3>
+                                <p class="text-slate-600">ノードにカーソルを合わせると表示される「ゴミ箱」ボタンで、ノードを削除できます。</p>
+                            </div>
+                            <div class="flex justify-center items-center p-4 bg-stone-100 rounded-lg">
+                                <div class="relative">
+                                    <div class="diagram-node"><p>古いキャンペーン</p></div>
+                                    <div class="absolute top-1/2 -right-6 -translate-y-1/2 bg-red-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg">🗑️</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accordion 2: AIによるアイデア出し機能 -->
+            <div class="accordion-item bg-white/60 border border-stone-200 rounded-xl shadow-sm transition-shadow hover:shadow-md">
+                <button class="accordion-button w-full flex justify-between items-center p-6 text-left">
+                    <span class="text-xl font-semibold text-slate-800">AIによるアイデア出し機能</span>
+                     <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="accordion-content">
+                    <div class="grid md:grid-cols-2 gap-6 items-center">
+                         <div>
+                            <h3 class="font-bold text-lg text-slate-800 mb-2">AIでアイデア出し ✨</h3>
+                            <p class="text-slate-600">「キラキラ」ボタンを押すと、AIがそのテーマを深掘りするアイデアを自動で生成します。</p>
+                        </div>
+                        <div class="flex justify-center items-center p-4 bg-stone-100 rounded-lg">
+                             <div class="relative">
+                                <div class="diagram-node"><p>新規顧客の獲得</p></div>
+                                <div class="absolute top-1/2 -right-6 -translate-y-1/2 bg-purple-500 text-white w-7 h-7 rounded-full flex items-center justify-center shadow-lg">✨</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accordion 3: データ管理機能 -->
+            <div class="accordion-item bg-white/60 border border-stone-200 rounded-xl shadow-sm transition-shadow hover:shadow-md">
+                <button class="accordion-button w-full flex justify-between items-center p-6 text-left">
+                    <span class="text-xl font-semibold text-slate-800">データ管理機能</span>
+                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="accordion-content">
+                    <div class="space-y-8">
+                        <div>
+                            <p class="text-center text-slate-600 mb-6">画面上部のボタンで、データの管理ができます。</p>
+                            <div class="flex justify-center items-center p-4 bg-stone-100 rounded-lg">
+                                <div class="flex justify-center gap-4">
+                                    <div class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm text-slate-700">🔄 リセット</div>
+                                    <div class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm text-slate-700">📤 CSVインポート</div>
+                                    <div class="flex items-center gap-2 px-4 py-2 bg-blue-500 border border-blue-500 rounded-lg shadow-sm text-white">📥 CSVエクスポート</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-800 mb-2">リセット 🔄</h3>
+                            <p class="text-slate-600">現在のツリー全体が初期状態にリセットされます。</p>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-800 mb-2">CSVインポート 📤</h3>
+                            <p class="text-slate-600">PCに保存されているCSVファイルを読み込み、ツリー構造を復元します。</p>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-800 mb-2">CSVエクスポート 📥</h3>
+                            <p class="text-slate-600">現在のツリーをCSVファイルとしてPCにダウンロードします。ファイル名は「(ルートノード名)_(日付).csv」形式で保存されます。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <footer class="text-center mt-20">
+            <p class="text-slate-400">このガイドが、あなたの思考整理のお役に立てれば幸いです。</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.querySelectorAll('.accordion-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const content = button.nextElementSibling;
+                button.classList.toggle('open');
+                content.classList.toggle('open');
+            });
+        });
+    </script>
+
+</body>
+</html>
