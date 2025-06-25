@@ -115,7 +115,7 @@ const TreeNode = ({ node, onAddChild, onDeleteNode, onEditText, isRoot, editingN
             </div>
             )}
           <div className="absolute top-1/2 -right-5 -translate-y-1/2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:scale-100 scale-90">
-            <button onClick={() => onExpandIdeas(node.id)} className="bg-purple-500 text-white p-2 rounded-full shadow-lg hover:bg-purple-600 transition-all hover:scale-110" title="✨ AIでアイデアを広げる">
+            <button onClick={() => onExpandIdeas(node.id)} className="bg-purple-500 text-white p-2 rounded-full shadow-lg hover:bg-purple-600 transition-all hover:scale-110" title="✨ AIでアイデアを洗い替え">
               <Sparkles size={16} />
             </button>
             <button onClick={() => onAddChild(node.id)} className="bg-blue-500 text-white p-2 rounded-full shadow-lg hover:bg-blue-600 transition-all hover:scale-110" title="子要素を追加">
@@ -153,6 +153,7 @@ const initialTree = {
   id: 'root',
   text: '会社の売上を向上させる',
   children: [],
+  source: 'manual',
 };
 
 // メインのAppコンポーネント
@@ -239,7 +240,8 @@ export default function App() {
                 const newNode = {
                     id: `imported-${Date.now()}-${index}`,
                     text: text,
-                    children: []
+                    children: [],
+                    source: 'manual', // インポートされたノードは手動扱い
                 };
 
                 if (depth === 0) {
@@ -274,7 +276,7 @@ export default function App() {
 
   const handleAddChild = useCallback((parentId) => {
     const newId = `node-${Date.now()}`;
-    const newNode = { id: newId, text: '新しい要素', children: [] };
+    const newNode = { id: newId, text: '新しい要素', children: [], source: 'manual' }; // 手動追加の印
     setTreeData(prevTree => {
         const newTree = JSON.parse(JSON.stringify(prevTree));
         const addAction = (node) => { node.children.push(newNode); return node; };
@@ -349,7 +351,6 @@ export default function App() {
     let nodeText = '';
     const ancestorTexts = [];
 
-    // Find the current node and its ancestors
     function findNodeAndAncestors(node, targetId, path = []) {
         const currentPath = [...path, node.text];
         if (node.id === targetId) {
@@ -375,7 +376,6 @@ export default function App() {
       return;
     }
 
-    // Enhance the prompt with context to avoid duplicates
     let prompt;
     if (ancestorTexts.length > 0) {
         prompt = `上位階層に「${ancestorTexts.join(' -> ')}」というトピックが存在する文脈で、「${nodeText}」というトピックを、より具体的な要素に分解してください。ただし、上位階層で既出のトピック（${ancestorTexts.join(', ')}）は提案に含めないでください。分解した要素を3つから5つ、JSON配列の形式で、["要素1", "要素2", ...] のように日本語で回答してください。`;
@@ -405,11 +405,18 @@ export default function App() {
       if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
         const ideas = JSON.parse(result.candidates[0].content.parts[0].text);
         if (Array.isArray(ideas)) {
-          const newNodes = ideas.map(idea => ({ id: `node-${Date.now()}-${Math.random()}`, text: idea, children: [] }));
+          // AI生成の印
+          const newNodes = ideas.map(idea => ({ id: `node-${Date.now()}-${Math.random()}`, text: idea, children: [], source: 'ai' }));
           setTreeData(prevTree => {
             let newTree = JSON.parse(JSON.stringify(prevTree));
-            const addAction = (node) => { node.children.push(...newNodes); return node; };
-            return traverseTree(newTree, nodeId, addAction);
+            const replaceAiAction = (node) => {
+              // 既存のAI生成ノードをフィルタリングし、手動ノードは残す
+              const manualChildren = node.children.filter(child => child.source !== 'ai');
+              // 手動ノードと新しいAIノードを結合
+              node.children = [...manualChildren, ...newNodes];
+              return node;
+            };
+            return traverseTree(newTree, nodeId, replaceAiAction);
           });
         }
       } else {
