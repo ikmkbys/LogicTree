@@ -308,39 +308,78 @@ export default function App() {
     });
   }, []);
 
-  const handleDropNode = useCallback((draggedId, targetId) => {
+  const handleDropNode = useCallback((draggedId, dropTargetId) => {
     setTreeData(currentTree => {
-      let draggedNode = null;
-      let newTree = JSON.parse(JSON.stringify(currentTree));
-      function isDescendant(node, id) {
-        if (node.id === id) return true;
-        return node.children?.some(child => isDescendant(child, id)) ?? false;
-      }
-      function findAndRemove(node, idToRemove) {
-        if (!node.children) return;
-        const childIndex = node.children.findIndex(child => child.id === idToRemove);
-        if (childIndex > -1) {
-          draggedNode = node.children.splice(childIndex, 1)[0];
-        } else {
-          node.children.forEach(child => findAndRemove(child, idToRemove));
+        const newTree = JSON.parse(JSON.stringify(currentTree));
+
+        let draggedNodeInfo = null;
+        let dropTargetInfo = null;
+
+        function findNodeWithParent(node, id, parent = null) {
+            if (node.id === id) {
+                return { node, parent };
+            }
+            if (node.children) {
+                for (const child of node.children) {
+                    const found = findNodeWithParent(child, id, node);
+                    if (found) return found;
+                }
+            }
+            return null;
         }
-      }
-      findAndRemove(newTree, draggedId);
-      function findAndAdd(node, idToFind) {
-        if (node.id === idToFind) {
-          if (draggedNode && !isDescendant(draggedNode, idToFind)) {
-              if (!node.children) node.children = [];
-              node.children.push(draggedNode);
-              return true;
-          }
-          return false;
+
+        draggedNodeInfo = findNodeWithParent(newTree, draggedId);
+        dropTargetInfo = findNodeWithParent(newTree, dropTargetId);
+
+        if (!draggedNodeInfo || !dropTargetInfo || draggedId === dropTargetId) {
+            return currentTree;
         }
-        return node.children?.some(child => findAndAdd(child, idToFind)) ?? false;
-      }
-      if(draggedNode && findAndAdd(newTree, targetId)){
+        
+        const { node: draggedNode, parent: draggedParent } = draggedNodeInfo;
+        const { node: dropTargetNode, parent: dropTargetParent } = dropTargetInfo;
+
+        function isDescendant(node, id) {
+            return node.id === id || (node.children && node.children.some(child => isDescendant(child, id)));
+        }
+
+        if (isDescendant(draggedNode, dropTargetId)) {
+            return currentTree;
+        }
+
+        // Case 1: 兄弟間の移動
+        if (draggedParent && dropTargetParent && draggedParent.id === dropTargetParent.id) {
+            const siblings = draggedParent.children;
+            const originalIndex = siblings.findIndex(c => c.id === draggedId);
+            const targetIndex = siblings.findIndex(c => c.id === dropTargetId);
+
+            // 1. 元の場所から削除
+            const [removedNode] = siblings.splice(originalIndex, 1);
+
+            // 2. 新しい位置に挿入
+            // `splice`で`originalIndex`が削除された後の配列に対して挿入位置を計算
+            const newTargetIndex = siblings.findIndex(c => c.id === dropTargetId);
+            
+            if (originalIndex < targetIndex) {
+                 // 下に移動した場合、ターゲットの後ろに挿入
+                 siblings.splice(newTargetIndex + 1, 0, removedNode);
+            } else {
+                // 上に移動した場合、ターゲットの前に挿入
+                siblings.splice(newTargetIndex, 0, removedNode);
+            }
+        } else { // Case 2: 親子関係の変更
+            // 元の場所から削除
+            if (draggedParent) {
+                draggedParent.children = draggedParent.children.filter(child => child.id !== draggedId);
+            }
+            // 新しい親の情報を再取得して追加
+            const newDropTargetParent = findNodeWithParent(newTree, dropTargetId).node;
+            if (!newDropTargetParent.children) {
+                newDropTargetParent.children = [];
+            }
+            newDropTargetParent.children.push(draggedNode);
+        }
+        
         return newTree;
-      }
-      return currentTree;
     });
   }, []);
 
