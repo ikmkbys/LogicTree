@@ -359,9 +359,9 @@ export default function App() {
             // `splice`で`originalIndex`が削除された後の配列に対して挿入位置を計算
             const newTargetIndex = siblings.findIndex(c => c.id === dropTargetId);
             
-            if (originalIndex < targetIndex) {
+            if (originalIndex < newTargetIndex) {
                  // 下に移動した場合、ターゲットの後ろに挿入
-                 siblings.splice(newTargetIndex + 1, 0, removedNode);
+                 siblings.splice(newTargetIndex, 0, removedNode);
             } else {
                 // 上に移動した場合、ターゲットの前に挿入
                 siblings.splice(newTargetIndex, 0, removedNode);
@@ -494,6 +494,11 @@ export default function App() {
                   AI Logic Tree
                 </h1>
                 <p className="text-slate-500 mt-2">課題を分解し、AIと一緒に根本原因や解決策を考えましょう。</p>
+                <div className="mt-4">
+                    <a href="whatlogictree.html" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline transition-colors">
+                        ロジックツリーとは？ (MECEの解説はこちら)
+                    </a>
+                </div>
             </div>
             <div className="flex justify-center gap-4 mt-6 flex-wrap">
                 <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg shadow-sm text-slate-700 hover:bg-slate-50 transition-colors">

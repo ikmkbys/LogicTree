@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【コラム】ロジックツリーとMECEを使いこなそう</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .tab-button.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .diagram-node {
+            position: relative;
+            border: 2px solid #e5e7eb;
+            background-color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+            text-align: center;
+        }
+        .diagram-connector {
+            position: absolute;
+            background-color: #d1d5db;
+        }
+    </style>
+    <!-- Chosen Palette: Serene Blue & Slate -->
+    <!-- Application Structure Plan: このSPAは、ユーザーが段階的に情報を学べるように、縦方向のシングルカラムレイアウトを採用します。ヒーローセクションで興味を引き、次に「ロジックツリー」「MECE」「重要性」と論理的な順序でコンテンツを配置します。インタラクティブ要素として、「ロジックツリーの種類」セクションにタブ切り替えを導入し、ユーザーが能動的に情報を選択できるようにします。これにより、長いテキストを読む負担を軽減し、エンゲージメントを高めます。各セクションは視覚的に区切られたカードで表示し、情報の塊を明確に認識できるように設計しました。 -->
+    <!-- Visualization & Content Choices: レポートの主要概念を視覚化するため、以下の手法を選択しました。1.「ロジックツリーの構造」: HTMLのdivとborderを駆使して、静的だが分かりやすいダイアグラムを作成。2.「ロジックツリーの種類」: リストではなくインタラクティブなタブUI（JSで制御）で表示し、能動的な学習を促進。3.「MECEの例」: 良い例（MECE）と悪い例（非MECE）を横並びのカードで対比させ、違いを直感的に理解しやすくする。4.「重要性のメリット」: 単純な箇条書きではなく、アイコン付きのカード形式で各メリットを提示し、視認性と記憶の定着を向上させます。これらの選択はすべて、SVGや画像ライブラリを使わず、HTML/CSS/JSのみで実現しています。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-slate-50 text-slate-700">
+
+    <div class="container mx-auto max-w-4xl px-4 py-16 sm:py-24">
+
+        <!-- Header -->
+        <header class="text-center mb-16 sm:mb-24">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-800 leading-tight">思考を整理し、答えを導き出す技術</h1>
+            <p class="mt-4 text-xl text-blue-600 font-semibold">ロジックツリーとMECE入門</p>
+        </header>
+
+        <main class="space-y-20">
+
+            <!-- Section 1: Logic Tree -->
+            <section id="logic-tree">
+                <h2 class="text-3xl font-bold text-slate-800 mb-8 border-b-4 border-blue-500 pb-2">Logic Tree（ロジックツリー）とは？</h2>
+                <p class="text-lg leading-relaxed mb-10">
+                    ロジックツリーとは、問題を「木」のように枝分かれさせながら、その構成要素を論理的に分解・整理していくための思考ツールです。大きなテーマや複雑な問題を一番上の階層に置き、そこから「なぜ？(Why)」や「どうやって？(How)」を繰り返しながら、より具体的で小さな要素へと分解していきます。
+                </p>
+
+                <!-- Logic Tree Diagram -->
+                <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-lg mb-12">
+                    <div class="relative flex justify-center items-center mb-12">
+                        <div class="diagram-node w-48">売上向上</div>
+                        <div class="diagram-connector absolute" style="width: 1px; height: 3rem; top: 100%; left: 50%;"></div>
+                        <div class="diagram-connector absolute" style="width: 60%; height: 1px; top: calc(100% + 3rem); left: 20%;"></div>
+                    </div>
+                    <div class="relative grid grid-cols-3 gap-8 pt-12">
+                         <div class="relative flex flex-col items-center">
+                            <div class="diagram-connector absolute" style="width: 1px; height: 3rem; bottom: 100%; left: 50%;"></div>
+                            <div class="diagram-node w-full">A事業の売上</div>
+                        </div>
+                        <div class="relative flex flex-col items-center">
+                            <div class="diagram-connector absolute" style="width: 1px; height: 3rem; bottom: 100%; left: 50%;"></div>
+                            <div class="diagram-node w-full">B事業の売上</div>
+                        </div>
+                        <div class="relative flex flex-col items-center">
+                            <div class="diagram-connector absolute" style="width: 1px; height: 3rem; bottom: 100%; left: 50%;"></div>
+                            <div class="diagram-node w-full">C事業の売上</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logic Tree Types -->
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-6">ロジックツリーの主な種類</h3>
+                    <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200">
+                        <button class="tab-button active text-lg font-semibold px-6 py-3 rounded-t-lg transition-colors duration-200" data-tab="what">Whatツリー</button>
+                        <button class="tab-button text-lg font-semibold px-6 py-3 rounded-t-lg transition-colors duration-200" data-tab="why">Whyツリー</button>
+                        <button class="tab-button text-lg font-semibold px-6 py-3 rounded-t-lg transition-colors duration-200" data-tab="how">Howツリー</button>
+                    </div>
+                    <div id="tab-content" class="bg-white p-6 rounded-b-lg rounded-r-lg border border-slate-200 shadow-inner">
+                        <div id="what" class="tab-content active">
+                            <h4 class="font-bold text-xl mb-2 text-blue-600">Whatツリー（要素分解ツリー）</h4>
+                            <p class="text-lg">あるテーマを構成する要素は何か？を洗い出すために使います。<br>（例: 「会社の売上」→「A事業の売上」「B事業の売上」...）</p>
+                        </div>
+                        <div id="why" class="tab-content">
+                            <h4 class="font-bold text-xl mb-2 text-blue-600">Whyツリー（原因追求ツリー）</h4>
+                            <p class="text-lg">なぜその問題が起きているのか？という原因を深掘りするために使います。<br>（例: 「顧客満足度が低い」→なぜ？→「商品の質が悪いから」「サポートが不十分だから」...）</p>
+                        </div>
+                         <div id="how" class="tab-content">
+                            <h4 class="font-bold text-xl mb-2 text-blue-600">Howツリー（問題解決ツリー）</h4>
+                            <p class="text-lg">どうすればその課題を解決できるか？という具体的な打ち手を考えるために使います。<br>（例: 「新規顧客を増やす」→どうやって？→「広告を出す」「イベントを開催する」...）</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: MECE -->
+            <section id="mece">
+                <h2 class="text-3xl font-bold text-slate-800 mb-8 border-b-4 border-blue-500 pb-2">MECE（ミーシー）とは？</h2>
+                <p class="text-lg leading-relaxed mb-10">
+                    MECEとは、<code class="text-blue-600 font-semibold bg-blue-100 px-2 py-1 rounded">Mutually Exclusive and Collectively Exhaustive</code> の頭文字を取った言葉で、日本語では「**モレなく、ダブりなく**」と訳されます。物事を分解・分類する際に、守るべき基本的な原則です。
+                </p>
+                 <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-green-50 border-2 border-green-200 p-6 rounded-xl">
+                        <h4 class="text-xl font-bold text-green-700 mb-4">✅ 良い例 (MECE)</h4>
+                        <p class="text-lg text-green-800">「人間」を「男性」と「女性」に分ける。<br>→ <strong class="font-semibold">モレなく、ダブりもない。</strong></p>
+                    </div>
+                     <div class="bg-red-50 border-2 border-red-200 p-6 rounded-xl">
+                        <h4 class="text-xl font-bold text-red-700 mb-4">❌ 悪い例 (非MECE)</h4>
+                        <p class="text-lg text-red-800">「人間」を「10代」「20代」「学生」に分ける。<br>→ <strong>「10代の学生」というダブり</strong>があり、<strong>「30代の社会人」などのモレ</strong>がある。</p>
+                    </div>
+                </div>
+                <p class="mt-8 text-lg bg-white border border-slate-200 rounded-xl p-6 shadow-sm">ロジックツリーの各階層の枝分かれがこのMECEの状態になっていることが非常に重要です。MECEでないと、分析に抜け漏れが生じたり、同じことを二重に考えてしまったりと、思考の精度が著しく低下してしまいます。</p>
+            </section>
+
+            <!-- Section 3: Importance -->
+            <section id="importance">
+                <h2 class="text-3xl font-bold text-slate-800 mb-8 border-b-4 border-blue-500 pb-2">なぜロジックツリーとMECEが重要なのか？</h2>
+                <p class="text-lg leading-relaxed mb-10">
+                    複雑な問題を前にすると、私たちはつい思いつきで議論を始めてしまいがちです。しかし、それでは本質的な原因や効果的な解決策にたどり着くのは困難です。ロジックツリーとMECEの考え方を用いることで、以下のようなメリットがあります。
+                </p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-shadow">
+                        <span class="text-3xl">🗺️</span>
+                        <h4 class="text-xl font-bold text-slate-800 mt-2 mb-2">思考の全体像を可視化</h4>
+                        <p>問題の全体構造を俯瞰でき、どこに焦点を当てるべきかが明確になります。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-shadow">
+                        <span class="text-3xl">漏</span>
+                        <h4 class="text-xl font-bold text-slate-800 mt-2 mb-2">議論の抜け漏れを防止</h4>
+                        <p>MECEを意識することで、考慮すべき点を網羅的に洗い出せます。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-shadow">
+                        <span class="text-3xl">🔗</span>
+                        <h4 class="text-xl font-bold text-slate-800 mt-2 mb-2">原因と結果の関係が明確に</h4>
+                        <p>なぜ問題が起きているのか、どうすれば解決できるのか、論理的な繋がりを整理できます。</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg transition-shadow">
+                        <span class="text-3xl">🤝</span>
+                        <h4 class="text-xl font-bold text-slate-800 mt-2 mb-2">チームでの共通認識を構築</h4>
+                        <p>ツリーを共有することで、メンバー全員が同じ地図を見ながら議論を進めることができます。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Conclusion -->
+             <footer class="text-center pt-16 border-t border-slate-200">
+                 <p class="text-lg text-slate-600">AIロジックツリーアプリは、この強力な思考ツールを、AIの力を借りてさらに効率的に活用できるよう設計されています。<br>ぜひ、日々の業務や学習に取り入れて、その効果を実感してみてください。</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.getAttribute('data-tab');
+
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                contents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === target) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
