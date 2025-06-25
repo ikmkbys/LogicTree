@@ -345,21 +345,44 @@ export default function App() {
   const handleExpandIdeas = useCallback(async (nodeId) => {
     setLoadingNodeId(nodeId);
     setError(null);
-    
-    let nodeText = '';
-    const findNodeText = (node, id) => {
-      if (node.id === id) nodeText = node.text;
-      if (node.children) node.children.forEach(child => findNodeText(child, id));
-    };
-    findNodeText(treeData, nodeId);
 
+    let nodeText = '';
+    const ancestorTexts = [];
+
+    // Find the current node and its ancestors
+    function findNodeAndAncestors(node, targetId, path = []) {
+        const currentPath = [...path, node.text];
+        if (node.id === targetId) {
+            nodeText = node.text;
+            ancestorTexts.push(...currentPath.slice(0, -1));
+            return true;
+        }
+        if (node.children) {
+            for (const child of node.children) {
+                if (findNodeAndAncestors(child, targetId, currentPath)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    findNodeAndAncestors(treeData, nodeId);
+    
     if (!nodeText) {
       setError("ノードが見つかりませんでした。");
       setLoadingNodeId(null);
       return;
     }
 
-    const prompt = `「${nodeText}」というトピックを、より具体的な要素に分解してください。分解した要素を3つから5つ、JSON配列の形式で、["要素1", "要素2", ...] のように日本語で回答してください。`;
+    // Enhance the prompt with context to avoid duplicates
+    let prompt;
+    if (ancestorTexts.length > 0) {
+        prompt = `上位階層に「${ancestorTexts.join(' -> ')}」というトピックが存在する文脈で、「${nodeText}」というトピックを、より具体的な要素に分解してください。ただし、上位階層で既出のトピック（${ancestorTexts.join(', ')}）は提案に含めないでください。分解した要素を3つから5つ、JSON配列の形式で、["要素1", "要素2", ...] のように日本語で回答してください。`;
+    } else {
+        prompt = `「${nodeText}」というトピックを、より具体的な要素に分解してください。分解した要素を3つから5つ、JSON配列の形式で、["要素1", "要素2", ...] のように日本語で回答してください。`;
+    }
+
     const payload = {
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
